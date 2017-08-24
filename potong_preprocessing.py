@@ -178,7 +178,7 @@ class PotongCleaning:
 
 class PotongModeling:
     
-    SAVED_MODEL_PATH = 'data/saved-model/'
+    SAVED_MODEL_PATH = 'data/saved_model/'
 
 #    def __init__():
 
@@ -205,8 +205,10 @@ class PotongModeling:
         
         ## Import cleaned data, the result from cleaning_data.py
         if load_cached_data:
+            
             DATA_PATH = "data/cleaned_potong{}.csv.gz".format(bus_line)
             made_data = pd.read_csv(DATA_PATH)
+            print('loaded from cache')
         else:
             potong_cleaning = PotongCleaning()
             made_data, data = potong_cleaning.clean_data(bus_line)
@@ -283,29 +285,29 @@ class PotongModeling:
         joblib.dump([labelencoder, onehotencoder, sc], "{}{}/{}/encoders.pkl".format(self.SAVED_MODEL_PATH, model_type, bus_line))
         joblib.dump([X_test, y_test], "{}{}/{}/Xy.pkl".format(self.SAVED_MODEL_PATH, model_type, bus_line))
     
-    def run(self, bus_line, model_type):
+    def run(self, bus_line, model_type, load_cached_data=False):
         
-        [regressor, labelencoder, onehotencoder, sc_X, X_test, y_test] = self._get_modellers(bus_line, model_type)
+        [regressor, labelencoder, onehotencoder, sc_X, X_test, y_test] = self._get_modellers(bus_line, model_type, load_cached_data)
     
         if regressor is None:
             return None
         self._save_model([regressor, labelencoder, onehotencoder, sc_X], [X_test, y_test], bus_line, model_type)
 
 
-run('1', 'time')
-run('2', 'time')
-run('2a', 'time')
-run('3', 'time')
+potong_modeling = PotongModeling()
+potong_modeling.run('1', 'time', load_cached_data=True)
+potong_modeling.run('2', 'time', load_cached_data=True)
+potong_modeling.run('2a', 'time', load_cached_data=True)
+#run('3', 'time')
 
-potong_clean = PotongCleaning()
-potong_clean.run('1')
-potong_clean.run('2')
-potong_clean.run('2a')
 
-#run('1')
-#run('2')
-#run('2a')
-#run('3')
+
+#potong_clean = PotongCleaning()
+#potong_clean.run('1')
+#potong_clean.run('2')
+#potong_clean.run('2a')
+
+
 
 
 
