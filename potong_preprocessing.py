@@ -194,9 +194,9 @@ class PotongModeling:
                 y_col = ['time_to_next']
                 
             elif model_type == 'location':
-                X_cols = ['day_of_week', 'status', 'hour', 'distance_to_next',
-                        'speed', 'linear_ref']
-                y_col = ['time_to_next']
+                X_cols = ['day_of_week', 'status', 'hour',
+                        'speed', 'linear_ref', 'time_to_next']
+                y_col = ['next_linear_ref']
             
             X = made_data[X_cols].values
             y = made_data[y_col].values
@@ -258,7 +258,7 @@ class PotongModeling:
         regressor.add(Dense(output_dim=1, init='normal'))
         
         regressor.compile(optimizer='adam', loss='mean_squared_error')
-        regressor.fit(X_train, y_train, batch_size=32, nb_epoch=150)
+        regressor.fit(X_train, y_train, batch_size=32, nb_epoch=100, validation_data=(X_test, y_test))
     
         return [regressor, labelencoder, onehotencoder, sc_X, X_test, y_test]
     
@@ -294,12 +294,16 @@ class PotongModeling:
         self._save_model([regressor, labelencoder, onehotencoder, sc_X], [X_test, y_test], bus_line, model_type)
 
 
-potong_modeling = PotongModeling()
-potong_modeling.run('1', 'time', load_cached_data=True)
-potong_modeling.run('2', 'time', load_cached_data=True)
-potong_modeling.run('2a', 'time', load_cached_data=True)
+#potong_modeling = PotongModeling()
+#potong_modeling.run('1', 'time', load_cached_data=True)
+#potong_modeling.run('2', 'time', load_cached_data=True)
+#potong_modeling.run('2a', 'time', load_cached_data=True)
 #run('3', 'time')
 
+potong_modeling = PotongModeling()
+potong_modeling.run('1', 'location', load_cached_data=True)
+potong_modeling.run('2', 'location', load_cached_data=True)
+potong_modeling.run('2a', 'location', load_cached_data=True)
 
 
 #potong_clean = PotongCleaning()

@@ -20,10 +20,12 @@ class PotongPrediction:
                           '2a': ['ขนส่ง 1', 'ขนส่ง 2'],
                           '3': ['สะพานหิน', 'เกาะสิเหร่']}
     
-    BUS_LINES = ['1', '2', '2a', '3']
+    BUS_LINES = ['1', '2', '2a'] #, '3']
     
-    def __init__(self):
+    def __init__(self, model_path =  "data/saved_model"):
         self.linref_latlon_cursor = connection.connect_postgres_linref_latlon()
+        
+        self.MODEL_PATH = model_path
 
 
     def _get_user_route_data(self, usr_lat, usr_lon, bus_line, direction):
@@ -47,16 +49,16 @@ class PotongPrediction:
         return rows[0]
 
     def _import_model(self, bus_line, model_type):
-        MODEL_PATH = "data/saved_model"
-        [labelencoder, onehotencoder, sc] = joblib.load("{}/{}/{}/encoders.pkl".format(MODEL_PATH, model_type, bus_line))
+        
+        [labelencoder, onehotencoder, sc] = joblib.load("{}/{}/{}/encoders.pkl".format(self.MODEL_PATH, model_type, bus_line))
         
         # load json and create model
-        json_file = open("{}/{}/{}/model.json".format(MODEL_PATH, model_type, bus_line), 'r')
+        json_file = open("{}/{}/{}/model.json".format(self.MODEL_PATH, model_type, bus_line), 'r')
         loaded_model_json = json_file.read()
         json_file.close()
         regressor = model_from_json(loaded_model_json)
         # load weights into new model
-        regressor.load_weights("{}/{}/{}/model.h5".format(MODEL_PATH, model_type, bus_line))
+        regressor.load_weights("{}/{}/{}/model.h5".format(self.MODEL_PATH, model_type, bus_line))
         print("Loaded model from disk")
     
         return [regressor, labelencoder, onehotencoder, sc]
@@ -161,10 +163,10 @@ class PotongLocation(PotongPrediction):
         
         predicted_location = regressor.predict([encoded_bus_data])
     
-        output = {'predicted_linear_ref': predicted_location[0],
+        output = {'predicted_linear_ref': float(predicted_location[0]),
                         'last_point_data': {
                             'last_timestamp': bus_data['timestamp'],
-                            'timestamp_now': time_now,
+                            'timestamp_now': str(time_now),
                             'time_to_next': cleaned_bus_data['time_to_next'],
                             'last_linear_ref': bus_data['linear_ref'],
                             'last_speed': bus_data['speed'],
@@ -176,6 +178,15 @@ class PotongLocation(PotongPrediction):
 
 class PotongTime(PotongPrediction):
     """ Time Prediction """
+    
+    def __init__(self, model_path =  "data/saved_model"):
+        self.MODEL_PATH = model_path
+        
+        self.linref_latlon_cursor = connection.connect_postgres_linref_latlon()
+        self.models = []
+        for bus_line in self.BUS_LINES:
+            self.models += [self._import_model(bus_line, model_type='time')]
+        print('init finish')
 
     def predict_time(self, bus_line, bus_data, usr_linear_ref, usr_route_lat, usr_route_lon):
         """ 1. Import Deep learning Model from Disk
@@ -185,7 +196,8 @@ class PotongTime(PotongPrediction):
         
         time_now = pd.to_datetime(datetime.datetime.utcnow())
         
-        [regressor, labelencoder, onehotencoder, sc] = self._import_model(bus_line, model_type='time')
+#        [regressor, labelencoder, onehotencoder, sc] = self._import_model(bus_line, model_type='time')
+        [regressor, labelencoder, onehotencoder, sc] = self.models[self.BUS_LINES.index(bus_line)]
         cleaned_bus_data = self._clean_data_time(bus_data, usr_linear_ref)
         encoded_bus_data = self._encode_data(cleaned_bus_data, labelencoder, onehotencoder, sc)
         
@@ -312,7 +324,11 @@ potong_time.request_time_prediction(bus_line, usr_lat, usr_lon, usr_dir)
 
 potong_location = PotongLocation()
 
-potong_location.predict_location('1', "059049183")
+predicloc = potong_location.predict_location('1', "059049183")
+json.dumps(predicloc)
+
+
+
 
 
 #bus_vehicle_id_1 = 359739072722465
