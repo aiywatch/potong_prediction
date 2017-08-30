@@ -191,7 +191,9 @@ class PotongTime(PotongPrediction):
     def predict_time(self, bus_line, bus_data, usr_linear_ref, usr_route_lat, usr_route_lon):
         """ 1. Import Deep learning Model from Disk
             2. Clean/Filter only required bus data and Encode the data
-            3. Predict arrival time """
+            3. Predict arrival time 
+            
+            Edit Output for adding JSON information """
         
         
         time_now = pd.to_datetime(datetime.datetime.utcnow())

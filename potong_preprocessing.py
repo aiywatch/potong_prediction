@@ -10,12 +10,42 @@ import connection
 
 
 class PotongCleaning:
+    """ NUMBER_OF_DAYS = days you want to use
+        SKIP_ROWS = select every nth rows to accelerate the process GNSS=6, DTC=1, XSENSE=?
+        LINE_VID_MAP = VID of each line you want to build model (remove nonworking buses)
+        -> you can add more VIDs and reduce NUMBER_OF_DAYS 
+        
+        Improve models accuracy by increse nb_epoch (to 150+) in PotongModeling._get_modellers
+        
+        Example
+        Creating models
+        potong_modeling = PotongModeling()
+        #potong_modeling.run('1', 'time', load_cached_data=True)
+        potong_modeling.run('2', 'time', load_cached_data=True)
+        potong_modeling.run('2a', 'time', load_cached_data=True)
+        potong_modeling.run('3', 'time', load_cached_data=True)
+        
+        # if you don't use location prediction, don't need to run below
+        potong_modeling.run('1', 'location', load_cached_data=False)
+        potong_modeling.run('2', 'location', load_cached_data=False)
+        potong_modeling.run('2a', 'location', load_cached_data=False)
+        potong_modeling.run('3', 'location', load_cached_data=False)
+        
+        Creating Cache cleaned_data. Generally don't need. But if you want
+        cache data to try different models, you can do so
+        #potong_clean = PotongCleaning()
+        #potong_clean.run('1')
+        #potong_clean.run('2')
+        #potong_clean.run('2a')
+        #potong_clean.run('3') """
+        
     NUMBER_OF_DAYS = 21
+    SKIP_ROWS = 1
     
-    LINE_VID_MAP = {'1': ["359739072722465"],
+    LINE_VID_MAP = {'1': ["359739072722465",],
                   '2': ["359739072730088"],
                   '2a': ["352648061891537"],
-                  '3': ["358901049778803"]}
+                  '3': ["117620103021"]} #"358901049778803"]}
     
     def __init__(self):
         self.BUS_DATA_ADAPTER = connection.connect_mongo_bus_status()
@@ -136,7 +166,7 @@ class PotongCleaning:
         
         data = data[(data['status'] == 'inbound') | (data['status'] == 'outbound')]
         
-        data = data.iloc[::6, :]
+        data = data.iloc[::self.SKIP_ROWS, :]
         
     #    data['linear_inbound'].astype(float, inplace=True)
         
@@ -294,22 +324,24 @@ class PotongModeling:
         self._save_model([regressor, labelencoder, onehotencoder, sc_X], [X_test, y_test], bus_line, model_type)
 
 
-#potong_modeling = PotongModeling()
-#potong_modeling.run('1', 'time', load_cached_data=True)
-#potong_modeling.run('2', 'time', load_cached_data=True)
-#potong_modeling.run('2a', 'time', load_cached_data=True)
+potong_modeling = PotongModeling()
+potong_modeling.run('1', 'time', load_cached_data=False)
+potong_modeling.run('2', 'time', load_cached_data=False)
+potong_modeling.run('2a', 'time', load_cached_data=True)
 #run('3', 'time')
 
-potong_modeling = PotongModeling()
-potong_modeling.run('1', 'location', load_cached_data=True)
-potong_modeling.run('2', 'location', load_cached_data=True)
-potong_modeling.run('2a', 'location', load_cached_data=True)
+#potong_modeling = PotongModeling()
+#potong_modeling.run('1', 'location', load_cached_data=True)
+#potong_modeling.run('2', 'location', load_cached_data=True)
+#potong_modeling.run('2a', 'location', load_cached_data=True)
+#potong_modeling.run('3', 'location', load_cached_data=True)
 
 
 #potong_clean = PotongCleaning()
 #potong_clean.run('1')
 #potong_clean.run('2')
 #potong_clean.run('2a')
+#potong_clean.run('3')
 
 
 
